@@ -1,0 +1,58 @@
+﻿<!DOCTYPE html>
+@*@if (ViewBag.IncludeManifest != null)
+{
+<text><html lang="en" manifest="/homes/manifest"></text>
+} else
+{
+<text><html lang="en"></text>
+}*@
+    <head>
+        <meta charset="utf-8" />
+        <title>@ViewBag.Title :: CodedHomes</title>
+        <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+        <meta name="viewport" content="width=device-width" />
+        @Styles.Render("~/Content/css")
+        @Scripts.Render("~/bundles/modernizr")
+        @RenderSection("styles", required: false)
+        <script>
+            window.onerror = function (errorText, url, lineNumber) {
+                var msg = 'errorText=' + errorText + '&url='
+                    + url + '&lineNumber=' + lineNumber;
+
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '/api/error', true);
+                xhr.setRequestHeader("Content-type",
+                    "application/x-www-form-urlencoded");
+                xhr.send(msg);
+            };
+        </script>
+    </head>
+    <body class="container">
+        <header>
+            <div class="row">
+                <div class="col-sm-4"><a href="/"><img alt="CodedHomes" title="CodedHomes" src="/img/coded-homes-logo.png" /></a></div>
+                <div class="col-sm-8">
+                    <div class="pull-right online standout">
+                       @* @if (ViewBag.IncludeManifest != null)
+                        {
+                            @Html.ActionLink("Manage Account", "manage", "account")
+                        } else
+                        {
+                            @Html.Partial("_LoginPartial")
+                        }*@
+                        @Html.Partial("_LoginPartial")
+                    </div>
+                </div>
+            </div>
+        </header>
+        <article>
+            @RenderBody()
+        </article>
+        <footer>
+            <small>&copy; @DateTime.Now.Year CodedHomes</small>
+        </footer>
+        @RenderSection("breakout", required: false)
+        @Scripts.Render("~/bundles/site")
+        @RenderSection("scripts", required: false)
+    </body>
+</html>

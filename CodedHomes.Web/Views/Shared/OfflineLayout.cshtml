@@ -1,0 +1,28 @@
+﻿<!DOCTYPE html>
+<html lang="en" manifest="/homes/manifest">
+    <head>
+        <meta charset="utf-8" />
+        <title>@ViewBag.Title :: CodedHomes</title>
+        <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+        <meta name="viewport" content="width=device-width" />
+        @Styles.Render("~/Content/css")
+        @Scripts.Render("~/bundles/modernizr")
+        @RenderSection("styles", required: false)
+    </head>
+    <body class="container-fluid">
+        <header>
+            <div class="row-fluid">
+                <div class="span6"><a href="/"><img alt="CodedHomes" title="CodedHomes" src="/img/coded-homes-logo.png" /></a></div>
+            </div>
+        </header>
+        <article>
+            @RenderBody()
+        </article>
+        <footer>
+            <small>&copy; @DateTime.Now.Year CodedHomes</small>
+        </footer>
+        @RenderSection("breakout", required: false)
+        @Scripts.Render("~/bundles/site")
+        @RenderSection("scripts", required: false)
+    </body>
+</html>

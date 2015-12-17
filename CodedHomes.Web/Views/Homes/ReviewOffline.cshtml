@@ -1,0 +1,131 @@
+﻿@{
+    ViewBag.Title = "Review Homes Saved While Offline";
+}
+
+@section scripts {
+    <script>
+
+        $(function() {
+
+            var ViewModel = function(data) {
+
+                this.homes = ko.observableArray(data);
+
+                this.errorMessage = ko.observable();
+
+                this.showSuccess = function() {
+                    $("#failure").fadeOut();
+                    $("#success").fadeIn();
+
+                    var fadeOut = function() {
+                        $("#success").fadeOut();
+                    };
+
+                    _.delay(fadeOut, 5000);
+                };
+
+                this.updateLayout = function() {
+                    if (_(vm.homes()).size() === 0) {
+                        $('#review-homes-container').fadeOut(function() {
+                            $('#done-container').fadeIn();
+                        });
+                    }
+                };
+
+                this.showFailure = function() {
+                    $("#failure").fadeIn();
+                    $("#success").fadeOut();
+                };
+
+                this.save = function(home) {
+                    debugger;
+
+                    homesDataService.save(home).done(function() {
+                        try {
+                            vm.del(home);
+                            vm.showSuccess();
+                            vm.updateLayout();
+                        } catch (e) {
+                            vm.showFailure(e);
+                        }
+
+                    }).fail(function(error) {
+                        vm.errorMessage = error;
+                        vm.showFailure();
+                    });
+                };
+
+                this.del = function(home) {
+                    debugger;
+                    try {
+                        homesDataService.delLocal(home);
+                        vm.homes.remove(home);
+                        vm.updateLayout();
+                    }
+                    catch (e) {
+                        vm.errorMessage = error;
+                        vm.showFailure();
+                    }
+                };
+            };
+
+            var
+                key = homesDataService.localKey,
+                data = window.localStorage.getItem(key),
+                homes = [];
+
+            if (data != undefined && data != 'undefined') {
+                homes = homesDataService.parse(data);
+            } else {
+                homes = [];
+            }
+
+            var vm = new ViewModel(homes);
+            ko.applyBindings(vm);
+
+            vm.updateLayout();
+
+
+        });
+
+    </script>    
+}
+
+<div id="review-homes-container">
+    <h2>Review Homes Added Offline</h2>
+    <div class="container-fluid">
+        <div class="span6">
+            <div data-bind="template: { name: 'home-template', foreach: homes }"></div>
+        </div>
+        <div class="span4">
+            <div id="success" class="alert alert-success none">
+                <h4>Home Saved</h4>
+                <p>The home is now saved on the server.</p>
+            </div>
+            <div id="failure" class="alert alert-error none">
+                <h4>Oops!</h4>
+                <p>Something went wrong. The error message is: <span data-bind="text: errorMessage"></span>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="done-container" class="none well">
+    <h2>Done!</h2>
+    <p>You processed all the homes that were saved while offline.</p>
+</div>
+
+
+<script type="text/html" id="home-template">
+    <div>
+        <address>
+            <span data-bind="text: streetAddress"></span><br />
+            <!-- ko if: $data.streetAddress2 --><span data-bind="text: streetAddress2"></span><br /><!-- /ko -->
+            <span data-bind="text: city"></span>, CA <span data-bind="text: zipCode"></span>
+        </address>
+        <p data-bind="text: description"></p>
+        <button class="btn btn-mini" data-bind="click: $parent.del">Delete</button>
+        <button class="btn btn-mini btn-primary" data-bind="click: $parent.save">Save</button>
+        <hr />
+    </div>
+</script>

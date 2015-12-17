@@ -1,0 +1,32 @@
+﻿@*CACHE MANIFEST
+# version 1 
+# @Url.Content("/views/shared/_Layout.cshtml").AppendHash(Request)
+# @Url.Content("/views/home/index.cshtml").AppendHash(Request)
+# @Url.Content("/views/homes/Offline.cshtml").AppendHash(Request)
+
+CACHE:
+# AppendHash approach from @@ShirtlessKirk via http://bit.ly/12HlyCD
+@Url.Content("/content/bootstrap.min.css").AppendHash(Request)
+@Url.Content("/content/bootstrap-responsive.css").AppendHash(Request)
+@Url.Content("/content/site.css").AppendHash(Request)
+@Url.Content("/img/coded-homes-logo.png").AppendHash(Request)
+@Url.Content("/img/coded-homes-logo-large.png").AppendHash(Request)
+@Url.Content("/scripts/lib/modernizr-2.6.2.js").AppendHash(Request)
+@Url.Content("/scripts/lib/jquery-1.9.1.js").AppendHash(Request)
+@Url.Content("/scripts/lib/bootstrap.js").AppendHash(Request)
+@Url.Content("/scripts/lib/underscore.js").AppendHash(Request)
+@Url.Content("/scripts/lib/knockout-2.2.1.debug.js").AppendHash(Request)
+@Url.Content("/scripts/lib/H5F.js").AppendHash(Request)
+@Url.Content("/scripts/app/homesDataService.js").AppendHash(Request)
+@Url.Content("/scripts/app/offlineUtility.js").AppendHash(Request)
+@Url.Content("/scripts/app/validationUtility.js").AppendHash(Request)
+@Url.Content("/scripts/app/serializer.js").AppendHash(Request)
+
+NETWORK:
+*
+
+@{
+    Layout = null;
+}
+
+@using CodedHomes.Web.Utilities*@

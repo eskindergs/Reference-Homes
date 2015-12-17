@@ -1,0 +1,247 @@
+﻿@{
+    ViewBag.Title = "Offline";
+    Layout = "~/Views/Shared/OfflineLayout.cshtml";
+}
+
+
+@section scripts {
+    <script>
+
+        $(function() {
+
+            var
+                notifyOnlineVersionAvailable = function() {
+                    $("#online-alert-container").fadeIn();
+                },
+                
+                hideOnlineLink = function() {
+                    $("#online-alert-container").fadeOut('fast');
+                };
+
+            var
+                offlineUtility = new OfflineUtility(notifyOnlineVersionAvailable, hideOnlineLink),
+                homeDataForm = $("#home-data-form")[0];
+
+            var Home = function() {
+                this.id = ko.observable();
+                this.streetAddress = ko.observable();
+                this.streetAddress2 = ko.observable();
+                this.city = ko.observable();
+                this.zipCode = ko.observable();
+                this.bedrooms = ko.observable();
+                this.bathrooms = ko.observable();
+                this.squareFeet = ko.observable();
+                this.price = ko.observable();
+                this.description = ko.observable();
+            };
+
+            var ViewModel = function(home) {
+                this.model = home;
+
+                this.isSupportedByBrowser = ko.observable(Modernizr.localstorage);
+
+                this.isNotSupportedByBrowser = ko.observable(!Modernizr.localstorage);
+
+                this.errorMessage = ko.observable();
+
+                this.showError = function(error) {
+                    if (error) {
+                        vm.errorMessage(error);
+                    }
+
+                    $('#fail-msg-container').fadeIn();
+                };
+
+                this.showSuccess = function() {
+
+                    $('#fail-msg-container').fadeOut();
+                    $('#success-msg-container').fadeIn();
+
+                    var fadeOut = function() {
+                        $('#success-msg-container').fadeOut()
+                    };
+
+                    _.delay(fadeOut, 5000);
+                };
+
+                this.save = function() {
+                    try {
+
+                        var validationUtility = new ValidationUtility();
+
+                        if (validationUtility.validate('home-data-form')) {
+                            var
+                                home = ko.toJS(this.model),
+                                serialized = JSON.stringify(home);
+
+                            debugger;
+
+                            homesDataService.saveLocal(serialized);
+
+                            vm.model.streetAddress('');
+                            vm.model.streetAddress2('');
+                            vm.model.city('');
+                            vm.model.zipCode('');
+                            vm.model.bedrooms('');
+                            vm.model.bathrooms('');
+                            vm.model.squareFeet('');
+                            vm.model.price('');
+                            vm.model.description('');
+
+                            this.showSuccess();
+                        }
+                    } catch (e) {
+                        this.showError(e.message);
+                    }
+
+                };
+            };
+
+            var vm = new ViewModel(new Home());
+
+            H5F.setup([homeDataForm], {
+                validClass: "valid",
+                invalidClass: "invalid",
+                requiredClass: "required"
+            });
+
+            ko.applyBindings(vm);
+        });
+    </script>    
+}
+
+<h1>Add New Home</h1>
+<div class="row">
+    <form id="home-data-form" data-bind="visible: isSupportedByBrowser">
+        <div class="col-md-4 mobile-push-right">
+            <div class="row">
+                <div class="col-md-8">
+                    <input id="streetAddress" name="streetAddress" data-bind="value: model.streetAddress" 
+                        type="text" class="full" autofocus
+                        data-role="validate"
+                        title="Street Address"
+                        data-content="The Street Address is required."
+                        placeholder="street address" required />
+                    <br />  <br />
+
+                    <input id="streeAddress2" name="city" data-bind="value: model.streetAddress2" 
+                        type="text" class="full" 
+                        placeholder="suite, apt. #, etc." /><br /> <br />
+
+                    <input id="city" name="city" data-bind="value: model.city" 
+                        title="City"
+                        data-role="validate"
+                        data-content="City is required."
+                        type="text" class="small" 
+                        placeholder="city" required /> CA 
+
+                    <input id="zipCode" name="zipCode" data-bind="value: model.zipCode" 
+                        title="Zip Code"
+                        data-role="validate"
+                        data-content="Zip Code required."
+                        type="number" class="no-spin small push-right" 
+                        placeholder="zip code" required />
+                </div>
+            </div>
+
+            <hr />
+
+            <div class="row stats">
+                <div class="col-md-4"><label for="bedrooms">Price</label></div>
+                <div class="col-md-8"><input data-bind="value: model.price" 
+                    title="Price"
+                    data-role="validate"
+                    data-content="Price is required."
+                    id="price" name="price"
+                    type="number" class="no-spin small" required /></div>
+            </div>
+              <br />
+            <div class="row stats">
+                <div class="col-md-4"><label for="bedrooms">Bedrooms</label></div>
+                <div class="col-md-8"><input data-bind="value: model.bedrooms" 
+                    id="bedrooms" name="bedrooms"
+                    title="Bedrooms"
+                    data-role="validate"
+                    data-content="The number of bedrooms is required."
+                    type="number" class="no-spin small" required /></div>
+            </div>
+              <br />
+            <div class="row stats">
+                <div class="col-md-4"><label for="bathrooms">Bathrooms</label></div>
+                <div class="col-md-8"><input data-bind="value: model.bathrooms"
+                    id="bathrooms" name="bathrooms" 
+                    title="Bathrooms"
+                    data-role="validate"
+                    data-content="The number of bathrooms is required."
+                    type="number" class="no-spin small" required /></div>
+            </div>
+              <br />
+            <div class="row stats">
+                <div class="col-md-4"><label for="square-feet">Square Feet</label></div>
+                <div class="col-md-8"><input 
+                    id="square-feet" name="square-feet" data-bind="value: model.squareFeet"
+                    title="Square Feet"
+                    data-role="validate"
+                    data-content="The square feet of the home is required."
+                    type="number" class="no-spin small" required /></div>
+            </div>
+
+            <hr />
+              <br />
+            <div class="row">
+                <div class="col-md-12">
+                    <label for="description">Description</label>
+                    <textarea data-bind="value: model.description" 
+                        id="description" name="description"
+                        class="full" required
+                        title="Description"
+                        data-role="validate"
+                        data-content="A description is required."></textarea>
+                </div>
+            </div>
+
+            <hr />
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div id="command-buttons" class="pull-right">
+                        <button data-bind="click: save" 
+                                type="button" 
+                                class="btn btn-primary btn-large push-right cmd">Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message Containers  -->
+            <div class="row">
+                <div id="success-msg-container" class="span11 alert alert-success alert-block push-down">
+                    <button type="button" class="close" data-dismiss="alert">×</button>
+                    <h4>Home Saved Offline</h4>
+                    <p>You'll have a chance to send homes added while offline 
+                        to the server when you regain connection to the web.</p>
+                </div>
+                <div id="fail-msg-container" class="col-md-8 alert alert-error alert-block push-down">
+                    <button type="button" class="close" data-dismiss="alert">×</button>
+                    <h4>Error</h4>
+                    <p>Oops, something bad happened! This is what the error message has to say about it:</p>
+                    <p data-bind="text: errorMessage"></p>
+                </div>
+            </div>
+            <!-- /Message Containers  -->
+
+        </div>
+    </form>
+    <div id="unsupported-browser" class="well push-down none" data-bind="visible: isNotSupportedByBrowser">
+        <h2>Unsupported Browser</h2>
+        <p>
+            Unfortunatley your browser doesn't support this application in offline mode.
+            Please try again once you are again connected to the internet.
+        </p>
+    </div>
+</div>
+
+@section breakout {
+<div id="online-alert-container" class="alert alert-success none sticky-message">
+    Your connection is restored! <a href="/homes/new/">Click here to add homes directly into the system.</a>
+</div>    
+}

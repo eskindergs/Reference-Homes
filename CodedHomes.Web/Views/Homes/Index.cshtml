@@ -1,0 +1,163 @@
+﻿@model CodedHomes.Web.ViewModels.HomesListViewModel
+
+@{
+    ViewBag.Title = "Available Homes";
+}
+
+@section styles {
+	<style>
+		.home-row {
+			margin-top:20px;
+			margin-bottom:20px;
+			border-bottom:1px solid #eee;
+			padding-bottom:15px;
+		}
+
+			.home-row .price {
+				font-size:2em;
+				color:#666;
+			}
+	</style>
+}
+@section scripts {
+<script>
+	$(function() {
+
+		var ViewModel = function() {
+
+			this.homes = ko.observableArray(@Html.Raw(Model.HomesJSON));
+
+
+@if (Model.CanDelete)
+{
+<text>
+			this.currentHome = {};
+
+			this.errorMessage = ko.observable();
+
+			this.showError = function(error) {
+				$('#error-container').fadeIn();
+			};
+
+			this.requestDelConfirm = function(home) {
+				vm.currentHome = home;
+				$('#del-confirm').modal();
+			};
+
+			this.del = function() {
+				var home = ko.toJS(vm.currentHome);
+
+				homesDataService.del(home).done(function(response) {
+					vm.homes.remove(function(item) {
+						return item.id === home.id;
+					});
+				}).fail(function(error) {
+					vm.showError(error);
+				}).always(function() {
+					$('#del-confirm').modal('hide');
+				});
+			};
+</text>
+}
+		};
+
+		var vm = new ViewModel();
+
+		_.each(vm.homes(), function(home) {
+			home.priceFormatted = ko.computed(function() {
+				return _.numberWithCommas(home.price);
+			});
+
+			home.imageUrl = ko.computed(function() {
+				var
+					imgName = home.imageName,
+					fileName = (imgName == null) ? 'no-image.png' : imgName,
+					url = '@Model.ImageUrlPrefix' + fileName;
+
+				return url;
+			});
+		});
+
+		ko.applyBindings(vm);
+	});
+</script>    
+}
+
+
+
+<h1>Homes</h1>
+@if (Model.CanDelete)
+{
+<div id="error-container" class="none">
+	<div class="alert alert-error">
+		<button type="button" class="close" data-dismiss="alert">&times;</button>
+		<h4>Oops..</h4>
+		<p>Something went wrong. Here's the error message:</p>
+		<p data-bind="text: errorMessage"></p>
+	</div>
+</div>
+}
+
+<div id="list-container">
+	<div data-bind="template: { name: 'list-template', foreach: homes }"></div>
+</div>
+<script type="text/html" id="list-template">
+	<div class="container-fluid">
+		<div class="row home-row">
+			<div class="col-sm-4" ><img data-bind="attr: {src: imageUrl}" class="img-rounded" /></div>
+			<div class="col-sm-8 col-sm-push-2">
+				<div class="row">
+					<div class="col-sm-4">
+						<address>
+							<span data-bind="text: streetAddress"></span><br />
+							<!-- ko if: $data.streetAddress2 -->
+							<span 
+								data-bind="text: streetAddress2"></span><br />
+							<!-- /ko -->
+							<span data-bind="text: city"></span>, CA <span 
+								data-bind="text: zipCode"></span>
+						</address>
+					</div>
+					<div class="col-sm-4 price" 
+						data-bind="text: priceFormatted"></div>
+				</div>
+				<div class="row">
+					<div class="col-sm-8"><p 
+						data-bind="text: description"></p></div>
+				</div>
+				<div class="row">
+@if (Model.CanDelete)
+{
+						<a href="#" class="btn-mini" 
+							data-bind="click: $parent.requestDelConfirm">Delete</a>
+}
+@if (Model.CanEdit)
+{
+						<a class="btn btn-primary btn-mini" 
+							data-bind="attr: {href: '/homes/edit/' + id}">Edit</a>
+}
+				</div>
+			</div>
+		</div>
+	</div><br /><br />
+</script>
+@if (Model.CanDelete)
+{
+<div id="del-confirm" class="modal hide fade" tabindex="-1" role="dialog" 
+	aria-labelledby="del-confirm-label" aria-hidden="true">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" 
+			aria-hidden="true">×</button>
+		<h3 id="del-confirm-label">Confirm Delete</h3>
+	</div>
+	<div class="modal-body">
+		<p>Are you sure you want to delete this home?</p>
+		<p class="alert alert-error push-down"><strong>Note:</strong> 
+			There is no undo for this action.</p>
+	</div>
+	<div class="modal-footer">
+		<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+		<button class="btn btn-primary" data-bind="click: del">Delete Home</button>
+	</div>
+</div>   
+}

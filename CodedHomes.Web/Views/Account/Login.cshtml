@@ -1,0 +1,45 @@
+﻿@model CodedHomes.Web.Models.LoginModel
+
+
+<h2>Login</h2>
+<p class="lead well well-small">@Html.ActionLink("Register", "Register") if you don't have an account.</p>
+<section id="loginForm" >
+
+@using (Html.BeginForm(new { ReturnUrl = ViewBag.ReturnUrl })) {
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+    <div class="container-fluid" style="text-align:left">
+        <div class="row">
+            <div class="col-md-4 col-sm-pull-2" style="text-align:right">@Html.LabelFor(m => m.UserName)</div>
+            <div class="col-md-8  col-sm-pull-2" style="text-align:left">
+                @Html.TextBoxFor(m => m.UserName)
+                @Html.ValidationMessageFor(m => m.UserName)
+            </div>
+        </div><br />
+        <div class="row">
+            <div class="col-md-4 col-sm-pull-2" style="text-align:right">@Html.LabelFor(m => m.Password)</div>
+            <div class="col-md-8 col-sm-pull-2" style="text-align:left">
+                @Html.PasswordFor(m => m.Password)
+                @Html.ValidationMessageFor(m => m.Password)
+            </div>
+        </div><br />
+        <div class="row">
+            <div class="col-md-4 col-sm-pull-2" style="text-align:right"> @Html.CheckBoxFor(m => m.RememberMe)</div>
+            <div class="col-md-8 col-sm-pull-2" style="text-align:left">
+                @Html.LabelFor(m => m.RememberMe, new { @class = "checkbox" })
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 col-sm-pull-2"></div>
+            <div class="col-md-8 col-sm-pull-2">
+                <input class="btn btn-info" type="submit" value="Log in"  />
+            </div>
+        </div>
+    </div>
+}
+</section>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

@@ -1,0 +1,128 @@
+﻿input.no-spin::-webkit-outer-spin-button,
+input.no-spin::-webkit-inner-spin-button {
+    /* http://stackoverflow.com/questions/3790935/can-i-hide-the-html5-number-inputs-spin-box */
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+    margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
+
+img.fancy {
+    border-radius:10px;
+}
+
+header {
+    border-top:10px solid #999;
+    padding-top:15px;
+}
+
+article {
+    margin-top:35px;
+}
+
+.standout {
+    text-transform:uppercase;
+    font-weight:bold;
+}
+
+.center {
+    text-align:center;
+}
+  
+ul.horiz {
+    list-style:none;
+        margin-left: 0;
+        padding-left: 1em;
+        text-indent: -1em;
+}
+
+    ul.horiz li {
+        display:inline;
+    }
+
+        ul.horiz li:after {
+            content: "  |  ";
+            color:#ccc;
+        }
+
+.sticky-message {
+    position:fixed;
+    top:-8px;
+    left:12.5%;
+    width:75%;
+    display: table;
+    margin: 0 auto;
+    text-align:center;
+    -webkit-box-shadow: 1px 1px 1px 1px #999;
+    box-shadow: 1px 1px 1px 1px #999;
+}
+
+footer {
+    min-height:300px;
+    border-top:3px solid #333;
+    background-color:#666;
+    color:#eee;
+    margin-top:25px;
+    padding:20px;
+    text-align:center;
+}
+
+label.checkbox {
+    display:inline;
+    margin-left:-15px;
+}
+
+input.small {
+    width:5em;
+}
+
+.full {
+    width:100%;
+}
+
+textarea {
+    height:6em;
+}
+
+.push-right {
+    margin-left:15px;
+}
+
+.push-down {
+    margin-top:15px;
+}
+
+#success-msg-container, 
+#fail-msg-container {
+    display:none;
+}
+
+.deferred, .none {
+    display:none;
+}
+
+textarea:invalid, input:invalid {
+    border:2px solid #ccc;
+}
+
+textarea.required, input.required
+{
+    background-color:#ffc;
+}
+
+@media (max-width: 720px) {
+    .row-fluid .full {
+        width:95%;
+    }
+
+    .mobile-push-down {
+        margin-bottom:10px;
+    }
+
+    .mobile-push-right {
+        margin-left:20px;
+    }
+
+    .stats input[type="number"].small {
+        width:92%;
+    }
+}

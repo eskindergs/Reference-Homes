@@ -1,0 +1,477 @@
+﻿@model CodedHomes.Web.ViewModels.HomeViewModel
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+   
+}
+
+@section styles {
+    <style>
+        #success-msg-container, 
+        #fail-msg-container,
+        #delete-msg-container,
+        #img-fail-msg-container {
+            display:none;
+        }
+    </style>
+}
+
+@section scripts {
+    <script>
+
+        $(function() {
+
+            //*
+            var
+                showOfflineLayout = function() {
+                    $('#offline-modal').modal();
+                    $('#offline-alert-container').show();
+                },
+                
+                showOnlineLayout = function() {
+                    var e = $('#offline-alert-container');
+                    if (e.is(':visible')) {
+                        e.fadeOut('fast');
+                    }
+                };
+
+            var offlineUtility =
+                new OfflineUtility(showOnlineLayout, showOfflineLayout);
+            // */
+
+            var
+                homeDataForm = $("#home-data-form")[0],
+                progressBar = $('#progress-bar');
+
+            var Home = function() {
+                this.id = ko.observable("@Model.Home.Id");
+                this.streetAddress = ko.observable("@Model.Home.StreetAddress");
+                this.streetAddress2 = ko.observable("@Model.Home.StreetAddress2");
+                this.city = ko.observable("@Model.Home.City");
+                this.zipCode = ko.observable("@((Model.Home.ZipCode > 0) ? Model.Home.ZipCode.ToString() : "")");
+                this.bedrooms = ko.observable("@Model.Home.Bedrooms");
+                this.bathrooms = ko.observable("@Model.Home.Bathrooms");
+                this.squareFeet = ko.observable("@Model.Home.SquareFeet");
+                this.price = ko.observable("@Model.Home.Price");
+                this.description = ko.observable("@Model.Home.Description");
+                this.imageName = ko.observable("@Model.Home.ImageName");
+                this.imageUrl = ko.computed({
+                    read: function() {
+                        var
+                            fileName = (this.imageName() === '') ?
+                                'no-image-large.png' : this.imageName(),
+                            url = '@Model.ImageUrlPrefix' + fileName;
+
+                        return url;
+                    },
+                    write: function(value) {
+                        var parts = value.split('/');
+                        this.imageName(parts[parts.length - 1])
+                    },
+                    owner: this
+                });
+            };
+
+            var ViewModel = function(home) {
+                this.model = home;
+
+                this.errorMessage = ko.observable();
+
+                // Offline Support
+                this.isOffline = ko.observable(false);
+
+                this.goToOfflinePage = function() {
+                    window.location = '/homes/offline';
+                };
+
+                this.hasOfflineHomesToSaveToServer = ko.computed(function() {
+                    if (Modernizr.localstorage) {
+                        var
+                            ls = window.localStorage.getItem('codedhomes-new-homes'),
+                            result = (ls !== null &&
+                                        ls !== undefined &&
+                                        ls !== 'undefined' &&
+                                        ls !== '[]');
+
+                        return result;
+                    }
+                    return false;
+                });
+                // Offline
+
+                this.hideProgressBar = function(showAfterHideFunc) {
+                    progressBar.fadeOut(function() {
+                        showAfterHideFunc();
+                    });
+                };
+
+                this.showError = function(error) {
+                    var resetUI = function() {
+                        $('#command-buttons').fadeIn();
+                        $('#fail-msg-container').fadeIn();
+                    };
+
+                    vm.hideProgressBar(resetUI);
+
+                    if (error.statusText) {
+                        vm.errorMessage(error.statusText);
+                    }
+
+                    if (error.responseText) {
+                        var
+                            msg = JSON.parse(error.responseText),
+                            keys = _.keys(msg),
+                            txt = '';
+
+                        _.each(keys, function(key) {
+                            txt += msg[key] + ' ';
+                        });
+                        vm.errorMessage(txt);
+                    }
+                };
+
+                this.showImageUpload = function() {
+                    $('#upload-button').hide();
+                    $('#upload-form-container').removeClass('none');
+                };
+
+                this.hideImageUpload = function() {
+                    $('#upload-button').show();
+                    $('#upload-form-container').addClass('none');
+                };
+
+                this.showImageError = function(error) {
+                    $('#img-fail-msg-container').fadeIn();
+                    vm.errorMessage(error.statusText);
+                };
+
+                this.showSuccess = function() {
+                    var resetUI = function() {
+                        $('#command-buttons').fadeIn();
+                        $('#fail-msg-container').fadeOut();
+                        $('#delete-msg-container').fadeOut();
+                        $('#success-msg-container').fadeIn();
+                    };
+
+                    vm.hideProgressBar(resetUI);
+
+                    $("#upload-form")[0].reset();
+                    
+                    var fadeOut = function() {
+                        $('#success-msg-container').fadeOut()
+                    };
+
+                    _.delay(fadeOut, 5000);
+                };
+
+                this.showDelete = function() {
+                    $('#fail-msg-container').fadeOut();
+                    $('#delete-msg-container').fadeIn();
+
+                    $('.cmd').each(function(i, element) {
+                        $(element).prop('disabled', true).addClass('muted');
+                    });
+                }
+
+                this.uploadImage = function() {
+                    if (window.FormData !== undefined) {
+                        var
+                            data = new FormData(),
+                            file = $('#image-upload')[0].files[0];
+
+                        data.append('image', file);
+                        data.append('id', vm.model.id());
+
+                        return homesDataService.saveImage(data);
+                    }
+                };
+
+                this.hasImageToUpload = function() {
+                    return $('#image-upload')[0].files.length > 0;
+                };
+
+                this.save = function() {
+
+                    vm.hideImageUpload();
+
+                    var validationUtility = new ValidationUtility();
+
+                    if (validationUtility.validate('home-data-form')) {
+                        $('#command-buttons').hide();
+                        $('#progress-bar').fadeIn();
+
+                        var home = ko.toJS(this.model);
+
+                        homesDataService.save(home).done(function(response) {
+                            if (response.id) {
+                                vm.model.id(response.id);
+                            }
+
+                            if (vm.hasImageToUpload()) {
+                                vm.uploadImage().done(function(result) {
+
+                                    if (result.status === 'error') {
+                                        vm.showImageError(result);
+                                    }
+                                    else {
+                                        vm.model.imageUrl(result.imageUrl);
+                                        vm.showSuccess();
+                                    }
+
+                                }).fail(function(error) {
+                                    vm.showImageError();
+                                });
+                            } else {
+                                vm.showSuccess();
+                            }
+
+                        }).fail(function(error) {
+                            vm.showError(error);
+                        });
+                    }                    
+                };
+
+                this.requestDelConfirm = function() {
+                    $('#del-confirm').modal();
+                };
+
+                this.del = function() {
+                    var home = ko.toJS(this.model);
+                    homesDataService.del(home).done(function(response) {
+                        vm.showDelete();
+                    }).fail(function(error) {
+                        vm.showError(error);
+                    }).always(function() {
+                        $('#del-confirm').modal('hide');
+                    });
+                };
+            };
+
+            var vm = new ViewModel(new Home());
+            ko.applyBindings(vm);
+
+            H5F.setup([homeDataForm], {
+                validClass: "valid",
+                invalidClass: "invalid",
+                requiredClass: "required"
+            });
+        });
+    </script>    
+}
+
+<div class="row">
+    <div class="col-md-4 mobile-push-down">
+        <div class="row">
+            <div class="col-md-8">
+                <div>
+                    <img data-bind="attr: { src: model.imageUrl }" class="fancy" />
+                </div>
+                <button id="upload-button" data-bind="click: showImageUpload" 
+                    class="btn btn-mini push-down">
+                        <i class="icon-upload"></i> Upload Image
+                </button>
+                <div id="upload-form-container" 
+                    class="none alert alert-success push-down">
+                    <form id="upload-form" action="/homes/uploadimage" 
+                        method="POST" enctype="multipart/form-data">
+                        <button class="btn btn-mini pull-right" 
+                            data-bind="click: hideImageUpload">x</button>
+                        <input id="image-upload" type="file" name="image" />
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div id="img-fail-msg-container" 
+            class="alert alert-error alert-block push-down">
+            <button type="button" class="close" data-dismiss="alert">×</button>
+            <h4>Error</h4>
+            <p>Oops, something bad happened! 
+                This is what the server has to say about it: </p>
+            <p data-bind="text: errorMessage"></p>
+        </div>
+    </div>
+    <form id="home-data-form">
+        <div class="col-md-4 col-sm-push-2 mobile-push-right">
+            <div class="row">
+                <div class="col-md-8">
+                    <input id="streetAddress" name="streetAddress" 
+                        data-bind="value: model.streetAddress" 
+                        type="text" class="full" autofocus
+                        data-role="validate"
+                        title="Street Address"
+                        data-content="The Street Address is required."
+                        placeholder="street address" required />
+                    <br /><br />
+
+                    <input id="streeAddress2" name="city" 
+                        data-bind="value: model.streetAddress2" 
+                        type="text" class="full" 
+                        placeholder="suite, apt. #, etc." /><br /><br />
+
+                    <input id="city" name="city" data-bind="value: model.city" 
+                        title="City"
+                        data-role="validate"
+                        data-content="City is required."
+                        type="text" class="small" 
+                        placeholder="city" required /> CA 
+
+                    <input id="zipCode" name="zipCode" 
+                        data-bind="value: model.zipCode" 
+                        title="Zip Code"
+                        data-role="validate"
+                        data-content="Zip Code required."
+                        type="number" class="no-spin small push-right" 
+                        placeholder="zip code" required />
+                </div>
+            </div>
+
+            <hr />
+
+            <div class="row stats" style="text-align:left">
+                <div class="col-md-4"><label for="bedrooms">Price</label></div>
+                <div class="col-md-8"><input data-bind="value: model.price" 
+                    title="Price"
+                    data-role="validate"
+                    data-content="Price is required."
+                    id="price" name="price"
+                    type="number" class="no-spin small" required /></div>
+            </div>
+
+            <div class="row stats" style="text-align:left">
+                <div class="col-sm-4"><label for="bedrooms">Bedrooms</label></div>
+                <div class="col-md-8"><input data-bind="value: model.bedrooms" 
+                    id="bedrooms" name="bedrooms"
+                    title="Bedrooms"
+                    data-role="validate"
+                    data-content="The number of bedrooms is required."
+                    type="number" class="no-spin small" required /></div>
+            </div>
+
+            <div class="row stats" style="text-align:left">
+                <div class="col-md-4">
+                    <label for="bathrooms">Bathrooms</label></div>
+                <div class="col-md-8"><input data-bind="value: model.bathrooms"
+                    id="bathrooms" name="bathrooms" 
+                    title="Bathrooms"
+                    data-role="validate"
+                    data-content="The number of bathrooms is required."
+                    type="number" class="no-spin small" required /></div>
+            </div>
+
+            <div class="row stats" style="text-align:left">
+                <div class="col-md-4">
+                    <label for="square-feet">Square Feet</label></div>
+                <div class="col-md-8"><input 
+                    id="square-feet" name="square-feet" 
+                    data-bind="value: model.squareFeet"
+                    title="Square Feet"
+                    data-role="validate"
+                    data-content="The square feet of the home is required."
+                    type="number" class="no-spin small" required /></div>
+            </div>
+
+            <hr />
+
+            <div class="row">
+                <div class="col-md-10">
+                    <label for="description">Description</label>
+                    <textarea data-bind="value: model.description" 
+                        id="description" name="description"
+                        class="full" required
+                        title="Description"
+                        data-role="validate"
+                        data-content="A description is required."></textarea>
+                </div>
+            </div>
+
+            <hr />
+
+            @if (Model.CanEdit)
+            {
+            <div class="row">
+                <div class="col-md-10">
+                    <div id="progress-bar" 
+                        class="progress progress-striped active fade-anim none">
+                        <div class="bar" style="width: 100%;"></div>
+                    </div>
+                    <div id="command-buttons" class="pull-right">
+                        @if (Model.CanDelete && !Model.IsNew)
+                        {
+                            <a href="#" id="delete-link" class="cmd" 
+                                data-bind="click: requestDelConfirm" 
+                                tabindex="-1">Delete</a>
+                        }
+                        <button data-bind="click: save" type="button" 
+                            class="btn btn-primary btn-large push-right cmd">
+                            Save</button>
+                    </div>
+                </div>
+            </div>   
+            }
+
+            <!-- Message Containers  -->
+            <div class="row">
+                <div id="success-msg-container" 
+                    class="col-sm-10 alert alert-success alert-block push-down">
+                    <button type="button" 
+                        class="close" data-dismiss="alert">×</button>
+                    <h4>Changes Saved</h4>
+                    <p>
+                        The home information is saved. 
+                        You can @Html.ActionLink("add another home", "new", "homes") or 
+                        @Html.ActionLink("return to the homes list", "index", "homes") if you wish.</p>
+                </div>
+            </div>
+
+            <div class="row">
+                <div id="fail-msg-container" 
+                    class="col-sm-10 alert alert-error alert-block push-down">
+                    <button type="button" class="close" 
+                        data-dismiss="alert">×</button>
+                    <h4>Error</h4>
+                    <p>Oops, something bad happened! 
+                        This is what the server has to say about it:</p>
+                    <p data-bind="text: errorMessage"></p>
+                </div>
+            </div>
+
+            <div class="row">
+                <div id="delete-msg-container" 
+                    class="col-sm-10 alert alert-block push-down">
+                    <button type="button" 
+                        class="close" data-dismiss="alert">×</button>
+                    <h4>Home Deleted</h4>
+                    <p>The home is now removed from the system.</p>
+                    <p>You can return to the 
+                        @Html.ActionLink("full homes list", "Index", "Homes") 
+                        or @Html.ActionLink("add a new home","new","Homes").
+                    </p>
+                </div>
+            </div>
+
+            <!-- /Message Containers  -->
+
+        </div>
+    </form>
+</div>
+
+<div id="del-confirm" class="modal hide fade" tabindex="-1" role="dialog" 
+    aria-labelledby="del-confirm-label" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="close" 
+            data-dismiss="modal" aria-hidden="true">×</button>
+        <h3 id="del-confirm-label">Confirm Delete</h3>
+    </div>
+    <div class="modal-body">
+        <p>Are you sure you want to delete this home?</p>
+        <p class="alert alert-error push-down"><strong>Note:</strong> 
+            There is no undo for this action.</p>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" 
+            data-dismiss="modal" aria-hidden="true">Close</button>
+
+        <button class="btn btn-primary" 
+            data-bind="click: del">Delete Home</button>
+    </div>
+</div>
